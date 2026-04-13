@@ -1,0 +1,556 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Build Scale Preview - All Devices</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; }
+        
+        body {
+            background: #1a1a2e;
+            color: #fff;
+            min-height: 100vh;
+            padding: 15px;
+            touch-action: manipulation;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 15px;
+            color: #00d4ff;
+            font-size: 1.5rem;
+        }
+        
+        .controls {
+            display: flex;
+            gap: 15px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+        }
+        
+        .panel {
+            background: #16213e;
+            padding: 15px;
+            border-radius: 10px;
+            flex: 1;
+            min-width: 250px;
+        }
+        
+        .panel h3 {
+            color: #00d4ff;
+            margin-bottom: 12px;
+            font-size: 1rem;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 6px;
+            color: #aaa;
+            font-size: 0.85rem;
+        }
+        
+        input, select {
+            width: 100%;
+            padding: 10px;
+            margin-bottom: 12px;
+            border: none;
+            border-radius: 5px;
+            background: #0f3460;
+            color: #fff;
+            font-size: 14px;
+            -webkit-appearance: none;
+        }
+        
+        input[type="file"] {
+            cursor: pointer;
+            font-size: 12px;
+        }
+        
+        button {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: 0.2s;
+            width: calc(50% - 5px);
+        }
+        
+        button:active {
+            transform: scale(0.95);
+        }
+        
+        .btn-primary {
+            background: #00d4ff;
+            color: #1a1a2e;
+            font-weight: bold;
+        }
+        
+        .btn-primary:hover {
+            background: #00a8cc;
+        }
+        
+        .btn-danger {
+            background: #ff4757;
+            color: #fff;
+        }
+        
+        .btn-group {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .canvas-container {
+            background: #16213e;
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            position: relative;
+        }
+        
+        #previewCanvas {
+            width: 100%;
+            height: 400px;
+            background: #0a0a15;
+            border-radius: 5px;
+            display: block;
+            cursor: crosshair;
+            touch-action: none;
+        }
+        
+        .scale-info {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+        
+        .scale-item {
+            background: #0f3460;
+            padding: 8px 12px;
+            border-radius: 5px;
+            font-size: 0.8rem;
+            flex: 1;
+            min-width: 100px;
+        }
+        
+        .scale-item span {
+            color: #00d4ff;
+            font-weight: bold;
+            display: block;
+            margin-top: 4px;
+        }
+        
+        .measurement-result {
+            display: none;
+            background: #0f3460;
+            padding: 12px;
+            border-radius: 5px;
+            margin-top: 12px;
+            border-left: 3px solid #00d4ff;
+        }
+        
+        .measurement-result.show {
+            display: block;
+        }
+        
+        .measurement-result h4 {
+            color: #00d4ff;
+            margin-bottom: 8px;
+        }
+        
+        .measurement-result p {
+            font-size: 0.9rem;
+            margin: 4px 0;
+            color: #ccc;
+        }
+        
+        .measurement-result .value {
+            color: #fff;
+            font-weight: bold;
+        }
+        
+        .instructions {
+            background: #16213e;
+            padding: 15px;
+            border-radius: 10px;
+            margin-top: 15px;
+        }
+        
+        .instructions h3 {
+            color: #00d4ff;
+            margin-bottom: 12px;
+            font-size: 1rem;
+        }
+        
+        .instructions ol {
+            margin-left: 18px;
+            color: #aaa;
+            font-size: 0.85rem;
+        }
+        
+        .instructions li {
+            margin-bottom: 8px;
+        }
+        
+        .instructions .highlight {
+            color: #00d4ff;
+            font-weight: bold;
+        }
+        
+        .tip-box {
+            background: #1a3a5a;
+            padding: 10px;
+            border-radius: 5px;
+            margin-top: 10px;
+            font-size: 0.8rem;
+            border-left: 3px solid #00d4ff;
+        }
+        
+        @media (max-width: 600px) {
+            body { padding: 10px; }
+            .panel { min-width: 100%; }
+            #previewCanvas { height: 300px; }
+            h1 { font-size: 1.2rem; }
+            .scale-item { min-width: 80px; font-size: 0.75rem; }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Build Scale Preview</h1>
+        
+        <div class="controls">
+            <div class="panel">
+                <h3>Upload Reference</h3>
+                <label>Pilih gambar dari perangkat:</label>
+                <input type="file" id="imageInput" accept="image/*">
+                
+                <label>Pixel referensi:</label>
+                <input type="number" id="pixelSize" placeholder="Contoh: 100">
+                
+                <label>Size sebenarnya:</label>
+                <input type="number" id="realSize" placeholder="Contoh: 10" value="10">
+                
+                <label>1 stud = </label>
+                <select id="studCm">
+                    <option value="0.28">0.28 meter (28 cm) - Roblox</option>
+                    <option value="28">28 cm</option>
+                    <option value="custom">Custom...</option>
+                </select>
+                
+                <label>Unit tampilan:</label>
+                <select id="unitName">
+                    <option value="studs">studs</option>
+                    <option value="cm">cm</option>
+                    <option value="m">meters</option>
+                </select>
+                
+                <button class="btn-primary" onclick="applyScale()">Apply Scale</button>
+            </div>
+            
+            <div class="panel">
+                <h3>Kalkulasi</h3>
+                <label>Jarak pixel:</label>
+                <input type="number" id="pixelDistance" placeholder="Pixel">
+                
+                <label>Hasil:</label>
+                <input type="text" id="realDistance" placeholder="Hasil" disabled>
+                
+                <div class="btn-group">
+                    <button class="btn-primary" onclick="calculate()">Hitung</button>
+                    <button class="btn-danger" onclick="clearCanvas()">Clear</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="canvas-container">
+            <h3>Klik 2 titik untuk mengukur</h3>
+            <canvas id="previewCanvas"></canvas>
+            
+            <div class="scale-info">
+                <div class="scale-item">Scale<span id="scaleRatio">-</span></div>
+                <div class="scale-item">Ratio<span id="ratioDisplay">-</span></div>
+                <div class="scale-item">Reference<span id="refDisplay">-</span></div>
+            </div>
+            
+            <div class="measurement-result" id="measurementResult">
+                <h4>Hasil Pengukuran:</h4>
+                <p>Jarak: <span class="value" id="distValue">-</span></p>
+                <p>Rotation: <span class="value" id="rotValue">-</span></p>
+                <p>Angle: <span class="value" id="angleValue">-</span></p>
+                <p>Start Point: <span class="value" id="startValue">-</span></p>
+                <p>End Point: <span class="value" id="endValue">-</span></p>
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h3>Cara Membuat Wireframe yang Akurat</h3>
+            <ol>
+                <li><span class="highlight">Buka game</span> di Roblox Studio</li>
+                <li><span class="highlight">Buat referensi:</span> Place object dengan ukuran yangknown (contoh: Part 10x10x10 studs)</li>
+                <li><span class="highlight">Screenshot:</span> Ambil foto screen dari sisi yang ingin diukur (samping/atas)</li>
+                <li><span class="highlight">Ukur pixel:</span> Buka gambar di MS Paint, klik pojok-ke-pojok, lihat ukuran pixel di info bar (100px dll)</li>
+                <li><span class="highlight">Input:</span> Masukkan pixel dan sizeactual (100px = 10 studs)</li>
+                <li><span class="highlight">Apply:</span> Klik Apply Scale, lalu klikdi canvas untuk mengukur bagian lain</li>
+                <li><span class="highlight">Build:</span> Gunakan hasil untuk build manual di game</li>
+            </ol>
+            
+            <div class="tip-box">
+                <strong>Tips Akurat:</strong><br>
+                • Pakai objek dengan ukuran bulat (10, 20, 50 studs)<br>
+                • Pastikan screenshot dari sudut yang tegaklurus<br>
+                • Jangan zoom/scale gambar sebelum upload<br>
+                • Reference object harus satu-satunya yang diketahui ukurannya
+            </div>
+        </div>
+        
+        <div class="instructions">
+            <h3>Cara Pakai</h3>
+            <ol>
+                <li>Upload gambar dari HP/komputer</li>
+                <li>Masukkan ukuran pixel referensi (ukur di gambar)</li>
+                <li>Masukkan size sebenarnya dalam studs</li>
+                <li>Klik "Apply Scale"</li>
+                <li>Klik 2 titik di canvas untuk mengukur</li>
+                <li>Rotation dan angleauto tampil</li>
+                <li>Klik kanan (PC) / tap 2 jari (HP) untuk clear</li>
+            </ol>
+        </div>
+    </div>
+    
+    <script>
+        const canvas = document.getElementById('previewCanvas');
+        const ctx = canvas.getContext('2d');
+        
+        let img = new Image();
+        let scaleRatio = 0;
+        let unitName = 'studs';
+        let studInCm = 0.28;
+        let savedImageData = null;
+        let clickPoints = [];
+        
+        function resizeCanvas() {
+            const container = canvas.parentElement;
+            canvas.width = container.clientWidth - 30;
+            canvas.height = window.innerWidth < 600 ? 300 : 400;
+            initCanvas();
+        }
+        
+        function initCanvas() {
+            ctx.fillStyle = '#0a0a15';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            drawGrid();
+            if (img.src && clickPoints.length === 0) {
+                drawImage();
+            }
+        }
+        
+        function drawGrid() {
+            ctx.strokeStyle = '#1a1a3e';
+            ctx.lineWidth = 1;
+            
+            for (let x = 0; x < canvas.width; x += 50) {
+                ctx.beginPath();
+                ctx.moveTo(x, 0);
+                ctx.lineTo(x, canvas.height);
+                ctx.stroke();
+            }
+            
+            for (let y = 0; y < canvas.height; y += 50) {
+                ctx.beginPath();
+                ctx.moveTo(0, y);
+                ctx.lineTo(canvas.width, y);
+                ctx.stroke();
+            }
+        }
+        
+        function drawImage() {
+            if (!img.src) return;
+            
+            ctx.fillStyle = '#0a0a15';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            drawGrid();
+            
+            const scale = Math.min(
+                canvas.width / img.width,
+                canvas.height / img.height
+            ) * 0.9;
+            
+            const x = (canvas.width - img.width * scale) / 2;
+            const y = (canvas.height - img.height * scale) / 2;
+            
+            ctx.drawImage(img, x, y, img.width * scale, img.height * scale);
+            savedImageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+        }
+        
+        function applyScale() {
+            const pixelSize = parseFloat(document.getElementById('pixelSize').value);
+            let realSize = parseFloat(document.getElementById('realSize').value);
+            const studCmSelect = document.getElementById('studCm');
+            
+            if (studCmSelect.value === 'custom') {
+                const customCm = prompt('1 stud = berapa cm?', '28');
+                studInCm = parseFloat(customCm) / 100;
+            } else {
+                studInCm = parseFloat(studCmSelect.value);
+            }
+            
+            unitName = document.getElementById('unitName').value || 'studs';
+            
+            if (unitName === 'cm') {
+                realSize = realSize * studInCm * 100;
+            } else if (unitName === 'm') {
+                realSize = realSize * studInCm;
+            }
+            
+            if (pixelSize && realSize) {
+                scaleRatio = realSize / pixelSize;
+                const displayUnit = unitName === 'studs' ? 'studs' : unitName;
+                document.getElementById('scaleRatio').textContent = scaleRatio.toFixed(4) + displayUnit + '/px';
+                document.getElementById('ratioDisplay').textContent = '1px=' + scaleRatio.toFixed(3) + displayUnit;
+                document.getElementById('refDisplay').textContent = pixelSize + 'px=' + realSize + displayUnit;
+            }
+        }
+        
+        function calculate() {
+            if (scaleRatio === 0) {
+                alert('Apply scale dulu!');
+                return;
+            }
+            
+            const pixelDist = parseFloat(document.getElementById('pixelDistance').value);
+            const realDist = pixelDist * scaleRatio;
+            const displayUnit = unitName === 'studs' ? 'studs' : unitName;
+            
+            document.getElementById('realDistance').value = realDist.toFixed(2) + ' ' + displayUnit;
+        }
+        
+        function getCanvasCoords(e) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+        
+        function handleCanvasClick(e) {
+            e.preventDefault();
+            
+            if (scaleRatio === 0) {
+                alert('Apply scale dulu!');
+                return;
+            }
+            
+            const coords = getCanvasCoords(e);
+            clickPoints.push(coords);
+            
+            if (clickPoints.length > 2) {
+                clickPoints.shift();
+            }
+            
+            drawImage();
+            
+            if (clickPoints.length === 2) {
+                const p1 = clickPoints[0];
+                const p2 = clickPoints[1];
+                
+                const pixelDist = Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2));
+                const realDist = pixelDist * scaleRatio;
+                
+                const dx = p2.x - p1.x;
+                const dy = p2.y - p1.y;
+                let angle = Math.atan2(dy, dx) * (180 / Math.PI);
+                if (angle < 0) angle += 360;
+                
+                const rotation = Math.atan2(dy, dx) * (180 / Math.PI);
+                
+                document.getElementById('pixelDistance').value = pixelDist.toFixed(1);
+                document.getElementById('realDistance').value = realDist.toFixed(2) + ' ' + unitName;
+                document.getElementById('distValue').textContent = pixelDist.toFixed(1) + 'px = ' + realDist.toFixed(2) + ' ' + unitName;
+                document.getElementById('rotValue').textContent = rotation.toFixed(1) + '°';
+                document.getElementById('angleValue').textContent = angle.toFixed(1) + '°';
+                document.getElementById('startValue').textContent = `(${p1.x.toFixed(0)}, ${p1.y.toFixed(0)})`;
+                document.getElementById('endValue').textContent = `(${p2.x.toFixed(0)}, ${p2.y.toFixed(0)})`;
+                document.getElementById('measurementResult').classList.add('show');
+                
+                const midX = (p1.x + p2.x) / 2;
+                const midY = (p1.y + p2.y) / 2;
+                
+                ctx.strokeStyle = '#00d4ff';
+                ctx.lineWidth = 3;
+                ctx.beginPath();
+                ctx.moveTo(p1.x, p1.y);
+                ctx.lineTo(p2.x, p2.y);
+                ctx.stroke();
+                
+                ctx.fillStyle = '#00d4ff';
+                ctx.font = 'bold 14px Arial';
+                ctx.textAlign = 'center';
+                ctx.fillText(`${pixelDist.toFixed(1)}px = ${realDist.toFixed(2)}${unitName}`, midX, midY - 15);
+                ctx.fillText(`${angle.toFixed(1)}°`, midX, midY + 20);
+                
+                ctx.beginPath();
+                ctx.arc(p1.x, p1.y, 6, 0, Math.PI * 2);
+                ctx.fill();
+                ctx.beginPath();
+                ctx.arc(p2.x, p2.y, 6, 0, Math.PI * 2);
+                ctx.fill();
+            }
+        }
+        
+        function handleRightClick(e) {
+            e.preventDefault();
+            clickPoints = [];
+            initCanvas();
+            document.getElementById('measurementResult').classList.remove('show');
+        }
+        
+        canvas.addEventListener('click', handleCanvasClick);
+        canvas.addEventListener('touchstart', handleCanvasClick, { passive: false });
+        canvas.addEventListener('contextmenu', handleRightClick);
+        
+        document.getElementById('imageInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(event) {
+                    img.onload = function() {
+                        initCanvas();
+                    }
+                    img.src = event.target.result;
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+        
+        function clearCanvas() {
+            document.getElementById('imageInput').value = '';
+            document.getElementById('pixelSize').value = '';
+            clickPoints = [];
+            img = new Image();
+            scaleRatio = 0;
+            initCanvas();
+            
+            document.getElementById('scaleRatio').textContent = '-';
+            document.getElementById('ratioDisplay').textContent = '-';
+            document.getElementById('refDisplay').textContent = '-';
+            document.getElementById('pixelDistance').value = '';
+            document.getElementById('realDistance').value = '';
+            document.getElementById('measurementResult').classList.remove('show');
+        }
+        
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+    </script>
+</body>
+</html>
